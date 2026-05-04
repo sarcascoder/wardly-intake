@@ -73,7 +73,7 @@ If a field is already filled, don't re-ask unless it's clearly wrong. If all req
     system: `${BOOKING_SYSTEM_PROMPT}\n\n${stateBlock}`,
     messages: await convertToModelMessages(messages),
     tools: buildBookingTools(sessionId),
-    stopWhen: stepCountIs(4),
+    stopWhen: stepCountIs(3),
     temperature: 0.3,
   });
 

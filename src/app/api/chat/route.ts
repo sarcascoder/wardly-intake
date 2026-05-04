@@ -52,7 +52,7 @@ If intake is complete, simply acknowledge politely and stop calling tools.`;
     system: `${INTAKE_SYSTEM_PROMPT}\n\n${stateBlock}`,
     messages: await convertToModelMessages(messages),
     tools: buildIntakeTools(sessionId),
-    stopWhen: stepCountIs(4),
+    stopWhen: stepCountIs(3),
     temperature: 0.3,
   });
 

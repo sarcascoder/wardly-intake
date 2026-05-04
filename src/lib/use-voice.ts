@@ -66,9 +66,9 @@ function getSpeechRecognitionCtor(): (new () => SpeechRecognitionLike) | null {
 }
 
 // How long the mic waits in silence before auto-stopping and sending what it
-// has. Tuned so a thoughtful patient pause is fine but a dropped conversation
-// gets handled. Override via the hook option.
-const DEFAULT_SILENCE_MS = 2500;
+// has. 1500ms is responsive enough for a phone-call feel while still tolerating
+// natural patient pauses. Override via the hook option.
+const DEFAULT_SILENCE_MS = 1500;
 
 // Minimum useful transcript length. Single-character bleeps from noise get
 // filtered. We keep "yes/no/ok/hi" intact via the regex below.
