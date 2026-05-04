@@ -289,3 +289,9 @@ No backend service, no database, no analytics — fits in `pnpm dev`.
 - I deliberately did not lean on any heavy UI library — the look is built from a small token system in `globals.css`. It should feel like a careful editorial product, not a generic chatbot.
 - The system prompt is plain English on purpose: a clinical product manager who is not an engineer should be able to read it, edit it, and own the conversation policy without touching code.
 - Everything is `Reset`-able from the header — useful if you want to record multiple takes for the Loom.
+
+---
+
+## License
+
+All rights reserved. This source is published as part of a take-home submission so it can be read and evaluated, and cloned to run locally for the same purpose. It may not be redistributed, modified, deployed elsewhere, used commercially, or used to train ML models. See [`LICENSE`](./LICENSE) for the full terms.

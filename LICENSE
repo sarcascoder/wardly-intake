@@ -1,0 +1,42 @@
+Copyright (c) 2026 Anupam Tripathi (sarcascoder). All Rights Reserved.
+
+This source code is published as part of a take-home submission for the
+Wardly Founding Engineer role. It is made available solely so that
+prospective employers, reviewers, and other evaluators can read the source
+to assess the author's engineering work.
+
+PERMITTED USES (no separate written permission required)
+
+  - View, read, and reference the source code for the purpose of
+    evaluating the author's work.
+  - Clone and run the application locally for the strict purpose of
+    evaluating the demo.
+  - Quote short excerpts (a few lines at most) in good-faith technical
+    discussion, with attribution, so long as no commercial benefit arises
+    from doing so.
+
+EXPRESSLY NOT PERMITTED (without prior written permission from the author)
+
+  - Copying, distributing, or redistributing the source code or any
+    derivative work, in whole or in part.
+  - Modifying the source code outside of an evaluator's local clone.
+  - Hosting, deploying, or otherwise making this software available to
+    third parties.
+  - Using this software, in whole or in part, in any commercial product,
+    service, or offering.
+  - Using this software, or any derivative thereof, to train, fine-tune,
+    or otherwise condition any machine-learning model.
+  - Removing or altering this notice.
+
+NO WARRANTY
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+  OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
+  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE,
+  ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+  OTHER DEALINGS IN THE SOFTWARE.
+
+For permissions beyond the scope of this notice, please contact the
+author through the GitHub profile https://github.com/sarcascoder.
