@@ -1,7 +1,11 @@
 import { convertToModelMessages, streamText, stepCountIs, type UIMessage } from 'ai';
 import { INTAKE_SYSTEM_PROMPT } from '@/lib/system-prompt';
 import { buildIntakeTools } from '@/lib/intake-tools';
-import { intakeStatus, getOrCreateSession } from '@/lib/session-store';
+import { resetSession, updateSession } from '@/lib/session-store';
+import {
+  deriveIntakeStateFromMessages,
+  intakeStatusFromState,
+} from '@/lib/derive-state';
 import { chatModel } from '@/lib/model';
 
 export const maxDuration = 60;
@@ -18,43 +22,41 @@ export async function POST(req: Request) {
     return new Response(JSON.stringify({ error: 'sessionId required' }), { status: 400 });
   }
 
-  const session = getOrCreateSession(sessionId);
-  const status = intakeStatus(session);
+  // Stateless server: derive the state for THIS request from the conversation
+  // history's tool calls. Persist it briefly into the in-process Map so the
+  // tool execute handlers (which mutate via updateSession) keep working
+  // unchanged for the duration of this streamText call. Subsequent requests
+  // will re-derive — Vercel's serverless functions don't share memory.
+  const derived = deriveIntakeStateFromMessages(messages, sessionId);
+  resetSession(sessionId);
+  updateSession(sessionId, (s) => {
+    Object.assign(s, derived);
+  });
+  const status = intakeStatusFromState(derived);
 
-  // Compact, deterministic context block — appended to the system prompt so
-  // the model always knows the current slot state without being told via tool
-  // call. This reduces unnecessary `get_intake_status` calls while keeping
-  // the agent grounded.
   const stateBlock = `
 Current intake state (auto-injected each turn):
-- Chief complaint captured: ${session.cc ? `yes — "${session.cc.verbatim}"` : 'no'}
+- Chief complaint captured: ${derived.cc ? `yes — "${derived.cc.verbatim}"` : 'no'}
 - HPI slots filled: ${status.filled.join(', ') || '(none yet)'}
 - HPI slots missing: ${status.missing.join(', ') || '(all filled)'}
 - ROS systems probed: ${status.rosProbed.join(', ') || '(none yet)'}
-- Red flags raised: ${session.redFlags.length}
-- Allergies confirmed: ${session.allergies.length > 0 ? session.allergies.join(', ') : '(not yet asked)'}
-- Current medications confirmed: ${session.currentMedications.length > 0 ? session.currentMedications.join(', ') : '(not yet asked)'}
-- Intake complete: ${session.intakeComplete ? `YES — ${session.completionReason}` : 'no'}
+- Red flags raised: ${derived.redFlags.length}
+- Allergies confirmed: ${derived.allergies.length > 0 ? derived.allergies.join(', ') : '(not yet asked)'}
+- Current medications confirmed: ${derived.currentMedications.length > 0 ? derived.currentMedications.join(', ') : '(not yet asked)'}
+- Intake complete: ${derived.intakeComplete ? `YES — ${derived.completionReason}` : 'no'}
 
 If intake is complete, simply acknowledge politely and stop calling tools.`;
 
   const result = streamText({
-    // Provider auto-selected via env: GROQ_API_KEY → llama-3.3-70b on Groq
-    // (30 RPM, sub-second TTFT), else gemini-2.0-flash-lite on Google.
     model: chatModel(),
     system: `${INTAKE_SYSTEM_PROMPT}\n\n${stateBlock}`,
     messages: await convertToModelMessages(messages),
     tools: buildIntakeTools(sessionId),
-    // Cap at 4 steps per turn — typical turn is text + ≤3 tool calls. Lower
-    // cap keeps free-tier rate-limit pressure bounded.
     stopWhen: stepCountIs(4),
-    // Lower temperature for more reliable adherence to "always include text".
     temperature: 0.3,
   });
 
   return result.toUIMessageStreamResponse({
-    // Surface provider errors (rate limits, auth) to the client as text so
-    // the user sees something instead of a silent stall.
     onError: (e) =>
       e instanceof Error
         ? `⚠️ ${e.message.split('\n')[0]}`

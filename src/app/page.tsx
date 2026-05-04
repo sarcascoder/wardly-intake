@@ -9,8 +9,9 @@ import { IntakeSidebar } from '@/components/intake-sidebar';
 import { BriefView } from '@/components/brief-view';
 import { BookingModal } from '@/components/booking-modal';
 import { useVoice } from '@/lib/use-voice';
-import type { ClinicalBrief, IntakeState } from '@/lib/clinical-schema';
+import type { ClinicalBrief } from '@/lib/clinical-schema';
 import type { BookingState } from '@/lib/booking-schema';
+import { deriveIntakeStateFromMessages } from '@/lib/derive-state';
 
 export default function Home() {
   // Stable per-tab session id. Using a ref so re-renders don't churn it.
@@ -18,7 +19,6 @@ export default function Home() {
   if (!sessionIdRef.current) sessionIdRef.current = nanoid(10);
 
   const [input, setInput] = useState('');
-  const [intakeState, setIntakeState] = useState<IntakeState | null>(null);
   const [brief, setBrief] = useState<ClinicalBrief | null>(null);
   const [generatingBrief, setGeneratingBrief] = useState(false);
   const [briefError, setBriefError] = useState<string | null>(null);
@@ -75,27 +75,14 @@ export default function Home() {
     }
   }, [messages, status, voice]);
 
-  // Refresh structured intake state from the server. We poll on a 700ms tick
-  // while a stream is in-flight (so chips appear live), and once after each
-  // stream settles. Cheap because it's an in-memory read.
-  const refreshState = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/intake-status?sessionId=${sessionIdRef.current}`);
-      if (!res.ok) return;
-      const json = await res.json();
-      if (json.exists) setIntakeState(json.state);
-    } catch {
-      /* ignore network blip */
-    }
-  }, []);
-
-  useEffect(() => {
-    if (status === 'streaming' || status === 'submitted') {
-      const t = setInterval(refreshState, 700);
-      return () => clearInterval(t);
-    }
-    refreshState();
-  }, [status, refreshState]);
+  // Derive intake state purely from the message stream — no server polling
+  // needed. Vercel serverless instances don't share memory, so the source of
+  // truth lives in the conversation history itself (every tool-call input
+  // becomes part of the message that survives across requests).
+  const intakeState = useMemo(
+    () => (messages.length > 0 ? deriveIntakeStateFromMessages(messages, sessionIdRef.current) : null),
+    [messages],
+  );
 
   // Auto-scroll to newest message
   useEffect(() => {
@@ -145,7 +132,7 @@ export default function Home() {
       const res = await fetch('/api/brief', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId: sessionIdRef.current }),
+        body: JSON.stringify({ sessionId: sessionIdRef.current, messages }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -169,7 +156,6 @@ export default function Home() {
     });
     sessionIdRef.current = nanoid(10);
     setMessages([]);
-    setIntakeState(null);
     setBrief(null);
     setBriefError(null);
     lastHandledTurnRef.current = null;

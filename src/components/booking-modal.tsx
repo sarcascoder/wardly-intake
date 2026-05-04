@@ -7,6 +7,8 @@ import { nanoid } from 'nanoid';
 import { ChatMessage } from '@/components/chat-message';
 import { useVoice } from '@/lib/use-voice';
 import type { BookingFields, BookingState } from '@/lib/booking-schema';
+import { newBookingState } from '@/lib/booking-schema';
+import { deriveBookingStateFromMessages } from '@/lib/derive-state';
 
 type Props = {
   onClose: () => void;
@@ -44,15 +46,29 @@ export function BookingModal({ onClose, onConfirmed }: Props) {
   if (!bookingIdRef.current) bookingIdRef.current = `book-${nanoid(8)}`;
 
   const [input, setInput] = useState('');
-  const [state, setState] = useState<BookingState | null>(null);
+  // Manual edits typed directly into form fields (separate from agent tool
+  // calls). Sent on every /api/book request as `formOverrides` so the agent
+  // sees the user's typed-in values in the next turn's stateBlock.
+  const [overrides, setOverrides] = useState<Partial<BookingFields>>({});
   const [confirming, setConfirming] = useState(false);
+  const [confirmedLocally, setConfirmedLocally] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Latest overrides in a ref so prepareSendMessagesRequest sees fresh values.
+  const overridesRef = useRef(overrides);
+  useEffect(() => {
+    overridesRef.current = overrides;
+  }, [overrides]);
 
   const { messages, sendMessage, status, setMessages, error, regenerate } = useChat({
     transport: new DefaultChatTransport({
       api: '/api/book',
       prepareSendMessagesRequest: ({ messages }) => ({
-        body: { sessionId: bookingIdRef.current, messages },
+        body: {
+          sessionId: bookingIdRef.current,
+          messages,
+          formOverrides: overridesRef.current,
+        },
       }),
     }),
   });
@@ -66,20 +82,25 @@ export function BookingModal({ onClose, onConfirmed }: Props) {
   );
   const voice = useVoice({ onTranscript: handleTranscript });
 
-  // Live state polling (700ms while streaming, once on settle)
-  const refresh = useCallback(async () => {
-    const res = await fetch(`/api/booking?sessionId=${bookingIdRef.current}`);
-    if (!res.ok) return;
-    const json = (await res.json()) as { exists: boolean; state?: BookingState };
-    if (json.exists && json.state) setState(json.state);
-  }, []);
-  useEffect(() => {
-    if (status === 'streaming' || status === 'submitted') {
-      const t = setInterval(refresh, 700);
-      return () => clearInterval(t);
+  // Stateless: derive booking state from the message stream's tool-call
+  // history, then overlay manual user form edits. No server polling needed.
+  const state: BookingState = useMemo(() => {
+    const derived =
+      messages.length > 0
+        ? deriveBookingStateFromMessages(messages, bookingIdRef.current)
+        : newBookingState(bookingIdRef.current);
+    for (const [k, v] of Object.entries(overrides)) {
+      if (v === undefined || v === null) continue;
+      // @ts-expect-error — keys come from BookingFields
+      derived.fields[k] = v;
     }
-    refresh();
-  }, [status, refresh]);
+    if (confirmedLocally) {
+      derived.confirmed = true;
+      derived.confirmedAt = derived.confirmedAt ?? Date.now();
+    }
+    return derived;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages, overrides, confirmedLocally]);
 
   // Speak agent replies when voice mode is on. Booking opens with voice on by
   // default so the patient can answer hands-free; the hook auto-restarts the
@@ -124,35 +145,24 @@ export function BookingModal({ onClose, onConfirmed }: Props) {
     setInput('');
   };
 
-  // User typing into a form field syncs to the server immediately. This makes
-  // the form a true two-way live mirror — the agent will see the user's edits
-  // on the next turn via the auto-injected system state block.
-  const updateField = async (key: keyof BookingFields, value: string) => {
-    setState((prev) => (prev ? { ...prev, fields: { ...prev.fields, [key]: value || null } } : prev));
-    await fetch('/api/booking', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sessionId: bookingIdRef.current, patch: { [key]: value || null } }),
-    });
+  // User typing into a form field updates the local override map. Each
+  // subsequent /api/book request includes the override so the agent sees the
+  // edited value in the next turn's stateBlock — true two-way live mirror,
+  // no server-side persistence required.
+  const updateField = (key: keyof BookingFields, value: string) => {
+    setOverrides((prev) => ({ ...prev, [key]: value || null }));
   };
 
-  const f = state?.fields;
-  const missing = useMemo(() => REQUIRED.filter((k) => !f?.[k]), [f]);
+  const f = state.fields;
+  const missing = useMemo(() => REQUIRED.filter((k) => !f[k]), [f]);
   const isComplete = missing.length === 0;
-  const isConfirmed = state?.confirmed ?? false;
+  const isConfirmed = state.confirmed;
 
   const handleConfirm = async () => {
-    if (!state) return;
     setConfirming(true);
     try {
-      // If the agent hasn't confirmed yet, mark it confirmed via direct PATCH.
-      // (The flag is a UX signal, not a payment / commitment.)
-      await fetch('/api/booking', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId: bookingIdRef.current, patch: {} }),
-      });
-      onConfirmed(state);
+      setConfirmedLocally(true);
+      onConfirmed({ ...state, confirmed: true, confirmedAt: Date.now() });
     } finally {
       setConfirming(false);
     }

@@ -1,6 +1,6 @@
-import { generateObject } from 'ai';
+import { generateObject, type UIMessage } from 'ai';
 import { ClinicalBriefSchema } from '@/lib/clinical-schema';
-import { getSession } from '@/lib/session-store';
+import { deriveIntakeStateFromMessages } from '@/lib/derive-state';
 import { synthesisModel } from '@/lib/model';
 
 export const maxDuration = 60;
@@ -8,21 +8,23 @@ export const maxDuration = 60;
 /**
  * Synthesise the final clinical brief from the slot-filled IntakeState.
  *
- * Note we feed the *structured* state (not the raw transcript) into the
- * model. This means the brief is grounded in what the agent actually
- * captured via tools — no hallucinated symptoms.
- *
- * We use Gemini 2.5 Pro here (vs Flash for conversation) because synthesis
- * latency doesn't matter and the writing quality of the narrative paragraph
- * is the part a clinician will read most carefully.
+ * Stateless: derives the IntakeState from the conversation's message stream
+ * passed in the request body, then feeds that *structured* state (not the
+ * raw transcript) to the synthesis model. The brief is grounded in what the
+ * agent actually captured via tools — no hallucinated symptoms.
  */
 export async function POST(req: Request) {
-  const { sessionId }: { sessionId: string } = await req.json();
-  const session = getSession(sessionId);
+  const { sessionId, messages }: { sessionId: string; messages: UIMessage[] } =
+    await req.json();
 
-  if (!session) {
-    return new Response(JSON.stringify({ error: 'No session found' }), { status: 404 });
+  if (!messages || !Array.isArray(messages)) {
+    return new Response(
+      JSON.stringify({ error: 'messages array required' }),
+      { status: 400 },
+    );
   }
+
+  const session = deriveIntakeStateFromMessages(messages, sessionId ?? 'brief');
 
   if (!session.cc) {
     return new Response(
