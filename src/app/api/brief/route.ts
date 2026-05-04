@@ -77,10 +77,11 @@ export async function POST(req: Request) {
   const probedSystems = Object.keys(session.ros);
   const notAssessed = allRosSystems.filter((s) => !probedSystems.includes(s));
 
-  const result = await generateObject({
-    model: synthesisModel(),
-    schema: ClinicalBriefSchema,
-    system: `You write structured clinical pre-visit briefs for primary care clinicians. Your tone is neutral, clinical, third-person. You DO NOT diagnose, hypothesise causes, or recommend treatment. You synthesise — you do not invent.
+  try {
+    const result = await generateObject({
+      model: synthesisModel(),
+      schema: ClinicalBriefSchema,
+      system: `You write structured clinical pre-visit briefs for primary care clinicians. Your tone is neutral, clinical, third-person. You DO NOT diagnose, hypothesise causes, or recommend treatment. You synthesise — you do not invent.
 
 Rules:
 - Every detail in the brief MUST be derivable from the provided IntakeState JSON. Do not add symptoms, history, or findings the patient did not state.
@@ -94,7 +95,7 @@ Rules:
 - intakeDurationSeconds: copy from the input.
 
 Return ONLY the structured object — no commentary.`,
-    prompt: `IntakeState (slot-filled by the conversational agent):
+      prompt: `IntakeState (slot-filled by the conversational agent):
 \`\`\`json
 ${stateJson}
 \`\`\`
@@ -104,8 +105,23 @@ Systems already probed: ${JSON.stringify(probedSystems)}.
 Therefore notAssessed should be: ${JSON.stringify(notAssessed)}.
 
 Synthesise the ClinicalBrief now.`,
-    temperature: 0.2,
-  });
+      temperature: 0.2,
+    });
 
-  return Response.json(result.object);
+    return Response.json(result.object);
+  } catch (e) {
+    // Surface the actual error to the client so the UI can show a useful
+    // message instead of an empty 500.
+    const message =
+      e instanceof Error ? e.message.split('\n')[0] : String(e);
+    console.error('[brief] generateObject failed:', e);
+    return new Response(
+      JSON.stringify({
+        error: /quota|rate|429|tokens per day|TPD/i.test(message)
+          ? 'Free-tier rate limit hit on the model provider during synthesis. Wait ~60 s and retry.'
+          : `Synthesis failed: ${message.slice(0, 200)}`,
+      }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } },
+    );
+  }
 }

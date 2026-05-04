@@ -64,12 +64,12 @@ export function synthesisModel(): LanguageModel {
     );
   }
   if (process.env.GROQ_API_KEY) {
-    // meta-llama/llama-4-maverick-17b-128e-instruct for synthesis — Llama 4
-    // MoE with bigger expert pool (128 experts vs scout's 16) for stronger
-    // narrative writing. Lenient about JSON schemas (gpt-oss-120b's strict
-    // response_format chokes on Zod-defaulted fields). Called once per
-    // session, so RPM doesn't bite.
-    return groq('meta-llama/llama-4-maverick-17b-128e-instruct');
+    // meta-llama/llama-4-scout-17b-16e-instruct for synthesis — verified to
+    // accept the strict ClinicalBriefSchema. (Maverick's response_format
+    // validator is stricter and rejects optional/nullable fields.) Same
+    // model as chat — chat's per-turn token use is tiny vs synthesis's
+    // single big call, so they share the 1M TPD bucket comfortably.
+    return groq('meta-llama/llama-4-scout-17b-16e-instruct');
   }
   if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
     return google('gemini-2.5-pro');
