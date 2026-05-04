@@ -43,11 +43,12 @@ export function chatModel(): LanguageModel {
     return ollama.chatModel(process.env.OLLAMA_MODEL ?? 'qwen2.5:7b');
   }
   if (process.env.GROQ_API_KEY) {
-    // openai/gpt-oss-20b on Groq — 200k TPD on free tier (2× the 70B's 100k),
-    // OpenAI-trained so tool-calling reliability is high, sub-second TTFT.
-    // Different quota bucket from llama-3.3-70b so the chat path doesn't
-    // contend with synthesis budget.
-    return groq('openai/gpt-oss-20b');
+    // llama-3.3-70b-versatile — best tool-calling discipline on Groq's free
+    // tier. Crucially, it pairs tool calls with text replies reliably (gpt-
+    // oss-20b often emits a tool call and then stops without text, which
+    // stalls voice mode). 100k TPD; called on every turn so we keep stops
+    // capped to 3 to limit per-turn token burn.
+    return groq('llama-3.3-70b-versatile');
   }
   if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
     return google('gemini-2.0-flash-lite');
