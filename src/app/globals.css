@@ -1,0 +1,400 @@
+@import 'tailwindcss';
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Wardly · Clinical-editorial design system
+   Cream paper · forest ink · terracotta accent · clinical chart-paper feel
+   ───────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Paper + ink */
+  --paper: #f7f3ec; /* warm cream — like medical journal paper */
+  --paper-2: #efe9df; /* slightly deeper for layered surfaces */
+  --paper-3: #e6dfd2; /* card edges */
+  --rule: #d6cebd; /* chart-rule lines */
+  --rule-strong: #b9ad95;
+  --ink: #14201b; /* deep forest near-black */
+  --ink-2: #2c3a35;
+  --ink-3: #5b6a64;
+  --ink-soft: #8a9690;
+
+  /* Accents */
+  --forest: #1f4d3f; /* primary — clinical sage/forest */
+  --forest-2: #2c6753;
+  --forest-soft: #d6e3dc;
+  --terracotta: #b86245; /* warm accent */
+  --terracotta-soft: #f0d9cf;
+  --amber: #b88934;
+  --amber-soft: #f0e0c2;
+  --rose: #a23f33; /* red-flag emphasis (muted, not alarmist) */
+  --rose-soft: #f0d4cf;
+  --rose-deep: #5e1f17;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-paper-3: var(--paper-3);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-ink-soft: var(--ink-soft);
+  --color-forest: var(--forest);
+  --color-forest-2: var(--forest-2);
+  --color-forest-soft: var(--forest-soft);
+  --color-terracotta: var(--terracotta);
+  --color-terracotta-soft: var(--terracotta-soft);
+  --color-amber: var(--amber);
+  --color-amber-soft: var(--amber-soft);
+  --color-rose: var(--rose);
+  --color-rose-soft: var(--rose-soft);
+  --color-rose-deep: var(--rose-deep);
+
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+}
+
+html,
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body), system-ui, sans-serif;
+  font-feature-settings: 'ss01', 'cv01', 'cv11';
+}
+
+/* Subtle paper grain — applied as a fixed background layer.
+   Looks like an old chart printed on slightly textured stock. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(circle at 20% 10%, rgba(184, 173, 149, 0.12), transparent 40%),
+    radial-gradient(circle at 80% 80%, rgba(31, 77, 63, 0.06), transparent 50%);
+  mix-blend-mode: multiply;
+}
+
+/* Chart-rule background for the intake panel. Looks like ruled paper. */
+.chart-rule {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 27px,
+    var(--rule) 27px,
+    var(--rule) 28px
+  );
+}
+
+/* Display headings */
+.font-display {
+  font-family: var(--font-display), Georgia, serif;
+  font-feature-settings: 'ss01';
+  letter-spacing: -0.01em;
+}
+
+/* Section labels: small caps, tracked-out */
+.section-label {
+  font-family: var(--font-body), sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* Mono helper */
+.font-mono {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-variant-ligatures: none;
+}
+
+/* Clinical "chip" indicator — small, dotted */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--rule);
+  background: var(--paper-2);
+  color: var(--ink-2);
+}
+
+.chip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink-soft);
+}
+
+.chip-filled {
+  border-color: var(--forest-2);
+  background: var(--forest-soft);
+  color: var(--forest);
+}
+.chip-filled .chip-dot {
+  background: var(--forest);
+}
+
+.chip-warn {
+  border-color: var(--amber);
+  background: var(--amber-soft);
+  color: #6b4f1d;
+}
+.chip-warn .chip-dot {
+  background: var(--amber);
+}
+
+.chip-flag {
+  border-color: var(--rose);
+  background: var(--rose-soft);
+  color: var(--rose-deep);
+}
+.chip-flag .chip-dot {
+  background: var(--rose);
+}
+
+/* Slot row in the chart sidebar */
+.slot-row {
+  display: grid;
+  grid-template-columns: 14px 1fr;
+  gap: 10px;
+  align-items: baseline;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--rule);
+}
+.slot-row:last-child {
+  border-bottom: none;
+}
+.slot-bullet {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-soft);
+  text-align: center;
+  line-height: 1;
+}
+.slot-bullet.filled {
+  color: var(--forest);
+}
+.slot-key {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+.slot-key.filled {
+  color: var(--ink);
+}
+.slot-value {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--ink);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+/* Conversation message styles */
+.bubble-patient {
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: 14px 14px 4px 14px;
+  padding: 10px 14px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.bubble-agent {
+  background: var(--paper-2);
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  border-radius: 14px 14px 14px 4px;
+  padding: 10px 14px;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink);
+  transition: all 120ms ease;
+  cursor: pointer;
+}
+.btn:hover {
+  background: var(--paper-2);
+  border-color: var(--rule-strong);
+}
+.btn-primary {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+.btn-primary:hover {
+  background: var(--forest);
+  border-color: var(--forest);
+}
+.btn-flag {
+  background: var(--terracotta);
+  color: var(--paper);
+  border-color: var(--terracotta);
+}
+.btn-flag:hover {
+  background: #a4533a;
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Mic button (round) */
+.btn-mic {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+.btn-mic:hover {
+  background: var(--paper-2);
+}
+.btn-mic.active {
+  background: var(--terracotta);
+  border-color: var(--terracotta);
+  color: var(--paper);
+  box-shadow: 0 0 0 6px rgba(184, 98, 69, 0.18);
+}
+.btn-mic.active::after {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 1px solid var(--terracotta);
+  opacity: 0.5;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.6;
+  }
+  70% {
+    transform: scale(1.3);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+}
+
+/* Soft fade-in for streamed messages */
+@keyframes softIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.soft-in {
+  animation: softIn 280ms ease-out both;
+}
+
+/* Custom scrollbars in clinical neutrals */
+.scroll-clinical::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scroll-clinical::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scroll-clinical::-webkit-scrollbar-thumb {
+  background: var(--rule);
+  border-radius: 999px;
+}
+.scroll-clinical::-webkit-scrollbar-thumb:hover {
+  background: var(--rule-strong);
+}
+
+/* Brief view — editorial */
+.brief-prose h1 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 28px;
+  letter-spacing: -0.015em;
+  margin: 0 0 6px;
+}
+.brief-prose h2 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 17px;
+  letter-spacing: -0.005em;
+  margin: 22px 0 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--rule);
+}
+.brief-prose h3 {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: 14px 0 4px;
+}
+.brief-prose p {
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 6px 0;
+}
+.brief-prose blockquote {
+  font-family: var(--font-display);
+  font-size: 18px;
+  line-height: 1.4;
+  font-style: italic;
+  border-left: 3px solid var(--terracotta);
+  padding: 4px 0 4px 14px;
+  margin: 8px 0;
+  color: var(--ink);
+}
+.brief-prose ul {
+  margin: 4px 0 8px;
+  padding-left: 18px;
+}
+.brief-prose li {
+  font-size: 13.5px;
+  line-height: 1.6;
+  margin: 2px 0;
+}
+.brief-prose code {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  padding: 1px 6px;
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+}
