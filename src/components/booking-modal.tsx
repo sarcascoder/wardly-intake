@@ -227,8 +227,8 @@ export function BookingModal({ onClose, onConfirmed }: Props) {
           >
             <span>
               <strong>Connection issue.</strong>{' '}
-              {/quota|rate|429/i.test(error.message)
-                ? 'Free-tier rate limit hit — wait ~60 s or switch providers (see .env.local).'
+              {/quota|rate|429|tokens per day|TPD/i.test(error.message)
+                ? 'Free-tier rate limit hit on the model provider. Wait ~60 s and retry, or close and reopen this dialog.'
                 : error.message.slice(0, 200)}
             </span>
             <button

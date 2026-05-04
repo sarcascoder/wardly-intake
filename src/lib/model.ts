@@ -43,12 +43,12 @@ export function chatModel(): LanguageModel {
     return ollama.chatModel(process.env.OLLAMA_MODEL ?? 'qwen2.5:7b');
   }
   if (process.env.GROQ_API_KEY) {
-    // llama-3.3-70b-versatile — best tool-calling discipline on Groq's free
-    // tier. Crucially, it pairs tool calls with text replies reliably (gpt-
-    // oss-20b often emits a tool call and then stops without text, which
-    // stalls voice mode). 100k TPD; called on every turn so we keep stops
-    // capped to 3 to limit per-turn token burn.
-    return groq('llama-3.3-70b-versatile');
+    // meta-llama/llama-4-scout-17b-16e-instruct — Llama 4 MoE, 1M TPD on
+    // Groq's free tier (10× llama-3.3-70b's 100k cap), and reliably pairs
+    // tool calls with text replies (unlike gpt-oss-20b which stops without
+    // text after a tool call). Best balance of headroom + discipline for
+    // bursty voice-mode use.
+    return groq('meta-llama/llama-4-scout-17b-16e-instruct');
   }
   if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
     return google('gemini-2.0-flash-lite');
@@ -64,11 +64,12 @@ export function synthesisModel(): LanguageModel {
     );
   }
   if (process.env.GROQ_API_KEY) {
-    // meta-llama/llama-4-scout-17b-16e-instruct for synthesis — Llama 4 MoE
-    // with strong instruction-following, more lenient about JSON schemas
-    // than gpt-oss-120b's strict response_format validator, and its own
-    // quota bucket separate from the chat path. Called once per session.
-    return groq('meta-llama/llama-4-scout-17b-16e-instruct');
+    // meta-llama/llama-4-maverick-17b-128e-instruct for synthesis — Llama 4
+    // MoE with bigger expert pool (128 experts vs scout's 16) for stronger
+    // narrative writing. Lenient about JSON schemas (gpt-oss-120b's strict
+    // response_format chokes on Zod-defaulted fields). Called once per
+    // session, so RPM doesn't bite.
+    return groq('meta-llama/llama-4-maverick-17b-128e-instruct');
   }
   if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
     return google('gemini-2.5-pro');

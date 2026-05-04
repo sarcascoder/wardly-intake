@@ -283,8 +283,8 @@ export default function Home() {
         >
           <span>
             <strong>Connection issue.</strong>{' '}
-            {/quota|rate|429/i.test(error.message)
-              ? 'Free-tier rate limit hit on Gemini — wait ~60 s or try again.'
+            {/quota|rate|429|tokens per day|TPD/i.test(error.message)
+              ? 'Free-tier rate limit hit on the model provider. Wait ~60 s and retry, or click Reset to start fresh.'
               : error.message.slice(0, 200)}
           </span>
           <button
